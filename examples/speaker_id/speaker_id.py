@@ -134,7 +134,6 @@ def get_htk_features(directory, from_pickle=False):
     return all_feats, total_num_feats, speaker1_feats, speaker2_feats
 
 def train_UBM(M, D, all_feats, total_num_feats):
-
     ubm_feats =  all_feats[0]
 
     for d in all_feats[1:]:
@@ -162,11 +161,15 @@ def adapt_UBM(ubm_params, data):
                   weights=np.array(ubm_params['weights']), cvtype='diag')
         gmm.train(data, max_em_iters=1)
     
+        #  ==== Actual adaptation code =====
         new_means = gmm.components.means
         new_weights = gmm.components.weights
         T = data.shape[0]
         updated_means = adapt_means(ubm_params['means'], ubm_params['covars'],\
                                     ubm_params['weights'], new_means, new_weights, T).flatten('C')
+
+        #  ==== Demo adaptation code =====
+        #updated_means = gmm.components.means
 
     return updated_means
 
@@ -191,7 +194,7 @@ def adapt_UBM_to_two_speakers(speaker1_feats, speaker2_feats, ubm_params):
 def train_SVM(svm_train_feats, svm_labels):
     # === TRAIN SVM ===
     svm = SVM()
-    svm.train(svm_train_feats, svm_labels, "gaussian") 
+    svm.train(svm_train_feats, svm_labels, "linear") 
     return svm
 
 def concat_svm_features(speaker1_svm_feats, speaker2_svm_feats):
@@ -209,9 +212,21 @@ def concat_svm_features(speaker1_svm_feats, speaker2_svm_feats):
                                  speaker2_svm_feats[4].reshape(1, M*D))).reshape(10, M*D, order='F')
     return svm_train_feats
 
+def classify_speaker(htk_feats, labels, ubm_params):
+    # For some bizzare reason this breaks...???
+    #means = adapt_UBM(ubm_params, htk_feats)
+
+    gmm = GMM(M, D, means=np.array(ubm_params['means']), covars=np.array(ubm_params['covars']),\
+              weights=np.array(ubm_params['weights']), cvtype='diag')
+    gmm.train(htk_feats, max_em_iters=1)
+    means = gmm.components.means
+    means = means.reshape(1, M*D)
+
+    result = speaker_svm.classify(means, labels)
+    return result 
+
 if __name__ == '__main__':
-    
-    M = 64
+    M = 256 
     D = 19
 
     # ============================ TRAINING PHASE =========================
@@ -236,17 +251,13 @@ if __name__ == '__main__':
     all_test_feats, total_num_test_feats,\
     sp1_htk_test_feats, sp2_htk_test_feats = get_htk_features("test", from_pickle=True)
 
+    sp1_label = np.array([1.0], dtype=np.float32)
+    sp2_label = np.array([1.0], dtype=np.float32) * -1.0
+    
     for htk_feats in sp1_htk_test_feats:
         htk_feats = htk_feats.reshape(htk_feats.shape[0]/D, D)
-        svm_feats = adapt_UBM(ubm_params, htk_feats)
-        svm_feats = svm_feats.reshape(1, M*D)
-        lab = np.ones(1)
-        result = speaker_svm.classify(svm_feats, lab)
+        classify_speaker(htk_feats, sp1_label, ubm_params)
 
-        
     for htk_feats in sp2_htk_test_feats:
         htk_feats = htk_feats.reshape(htk_feats.shape[0]/D, D)
-        svm_feats = adapt_UBM(ubm_params, htk_feats)
-        svm_feats = svm_feats.reshape(1, M*D)
-        lab = np.ones(1) * -1.0
-        result = speaker_svm.classify(svm_feats, lab)
+        classify_speaker(htk_feats, sp2_label, ubm_params)

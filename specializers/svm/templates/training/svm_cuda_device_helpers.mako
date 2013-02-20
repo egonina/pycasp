@@ -2,6 +2,7 @@
 #define VERSION 0.1
 
 #define BLOCKSIZE 512 
+#define DIM 2000 
 #define IMUL(a, b) __mul24(a, b)
 
 #ifdef __DEVICE_EMULATION__
@@ -84,7 +85,7 @@ __device__ void coopExtractRowVector(float* data, int dataPitch,
                                      float* destination) {
     float* xiRowPtr = data + (index * dataPitch) + threadIdx.x;
     for(int currentDim = threadIdx.x;
-        currentDim < min(1500,dimension);
+        currentDim < min(DIM, dimension);
         currentDim += blockDim.x) {
         destination[currentDim] = *xiRowPtr;
         xiRowPtr += blockDim.x;

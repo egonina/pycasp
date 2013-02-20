@@ -106,7 +106,6 @@ void copy_transposed_point_data_CPU_to_GPU(int nPoints, int nDimension) {
 }
 
 void alloc_point_data_on_GPU(int nPoints, int nDimension) {
-
     // Allocate training data on the GPU
     CUDA_SAFE_CALL(cudaMallocPitch((void**)&devData, &devDataPitch,
                    nPoints * sizeof(float), nDimension));
@@ -118,7 +117,6 @@ void alloc_point_data_on_GPU(int nPoints, int nDimension) {
 }
 
 void alloc_point_data_on_GPU_from_ptr(size_t ptr, int nPoints, int nDimension) {
-
     devData = (float*)ptr;
     devDataPitch = (size_t)(nPoints * sizeof(float));
     align_host_data(nPoints, nDimension);

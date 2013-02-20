@@ -72,6 +72,7 @@ PyObject* train(int nPoints, int nDimension,
     size_t remainingMemory;
     size_t totalMemory;
     cuMemGetInfo(&remainingMemory, &totalMemory);
+    printf("Remaining memory: %zd, totalMemory = %zd\n", remainingMemory, totalMemory);
     
     int sizeOfCache = remainingMemory / ((int)rowPitch);
     //If I try to grab all the memory available, it'll fail

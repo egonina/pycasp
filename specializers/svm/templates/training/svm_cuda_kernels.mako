@@ -403,6 +403,7 @@ __global__ void takeFirstStep(void* devResultT, float* devKernelDiag,
     if (alpha2New > cost) {
     	alpha2New = cost;
     }
+
     //alpha1New == alpha2New for the first step
     
     devAlphaT[iLow] = alpha2New;
@@ -432,16 +433,10 @@ __global__ void	firstOrderPhaseOne(float* devData, int devDataPitchInFloats,
                                    int iLowCacheIndex, int iHighCacheIndex,
                                    int* devLocalIndicesRL, int* devLocalIndicesRH,
                                    float* devLocalFsRL, float* devLocalFsRH) {
-    extern __shared__ float xIHigh[];
-    float* xILow;
     __shared__ int tempLocalIndices[BLOCKSIZE];
     __shared__ float tempLocalFs[BLOCKSIZE];
-    
-    if (iHighCompute) {
-    	xILow = &xIHigh[nDimension];
-    } else {
-    	xILow = xIHigh;
-    }
+    __shared__ float xIHigh[DIM];
+    __shared__ float xILow[DIM];
     
     if (iHighCompute) {
       //Load xIHigh into shared memory
@@ -501,7 +496,8 @@ __global__ void	firstOrderPhaseOne(float* devData, int devDataPitchInFloats,
         if (!iLowCompute) {
             lowKernel = devCache[(devCachePitchInFloats * iLowCacheIndex) + globalIndex];
         }
-        if(nDimension < 1500)
+
+        if(nDimension < DIM)
         {
             if (iHighCompute && iLowCompute) {
               Kernel::dualKernel(devData + globalIndex,
@@ -526,10 +522,10 @@ __global__ void	firstOrderPhaseOne(float* devData, int devDataPitchInFloats,
              if (iHighCompute && iLowCompute) {
                Kernel::dualKernel(devData + globalIndex,
                                   devDataPitchInFloats,
-                                   devData + globalIndex + (devDataPitchInFloats * nDimension), 
-                                   devTransposedData + iHigh*devTransposedDataPitchInFloats, 1, 
-                                   devTransposedData + iLow*devTransposedDataPitchInFloats, 1,
-                                   parameterA, parameterB, parameterC, highKernel, lowKernel);
+                                  devData + globalIndex + (devDataPitchInFloats * nDimension), 
+                                  devTransposedData + iHigh*devTransposedDataPitchInFloats, 1, 
+                                  devTransposedData + iLow*devTransposedDataPitchInFloats, 1,
+                                  parameterA, parameterB, parameterC, highKernel, lowKernel);
               } else if (iHighCompute) {
                   highKernel = Kernel::kernel(devData + globalIndex,
                                             devDataPitchInFloats,
@@ -743,16 +739,10 @@ __global__ void	secondOrderPhaseOne(float* devData, int devDataPitchInFloats,
                                     int iHighCacheIndex, int* devLocalIndicesRH,
                                     float* devLocalFsRH) {
   
-    extern __shared__ float xIHigh[];
-    float* xILow;
     __shared__ int tempLocalIndices[BLOCKSIZE];
     __shared__ float tempLocalFs[BLOCKSIZE];
-
-    if (iHighCompute) {
-        xILow = &xIHigh[nDimension];
-    } else {
-        xILow = xIHigh;
-    }
+    __shared__ float xILow[DIM];
+    __shared__ float xIHigh[DIM];
 
     if (iHighCompute) {
         coopExtractRowVector(devTransposedData, devTransposedDataPitchInFloats,
@@ -799,7 +789,7 @@ __global__ void	secondOrderPhaseOne(float* devData, int devDataPitchInFloats,
         } else {
             lowKernel = devCache[(devCachePitchInFloats * iLowCacheIndex) + globalIndex];
         }
-        if(nDimension < 1500) {
+        if(nDimension < DIM) {
             if (iHighCompute && iLowCompute) {
                 Kernel::dualKernel(devData + globalIndex, devDataPitchInFloats,
                                    devData + globalIndex + (devDataPitchInFloats * nDimension),
@@ -904,7 +894,7 @@ __global__ void secondOrderPhaseThree(float* devData, int devDataPitchInFloats,
                                       int nDimension, int nPoints, float parameterA,
                                       float parameterB, float parameterC, float* devLocalFsRL,
                                       int* devLocalIndicesMaxObj, float* devLocalObjsMaxObj) {
-    extern __shared__ float xIHigh[];
+    __shared__ float xIHigh[DIM];
     __shared__ int tempIndices[BLOCKSIZE];
     __shared__ float tempValues[BLOCKSIZE];
     __shared__ float iHighSelfKernel;
@@ -941,7 +931,7 @@ __global__ void secondOrderPhaseThree(float* devData, int devDataPitchInFloats,
         }
 
         if (iHighCompute) {
-            if(nDimension <1500) {
+            if(nDimension < DIM) {
                 highKernel = Kernel::kernel(devData + globalIndex, devDataPitchInFloats,
                                             devData + globalIndex + (devDataPitchInFloats * nDimension),
                                             xIHigh, 1, parameterA, parameterB, parameterC);
@@ -1568,7 +1558,6 @@ void launchSecondOrder(bool iLowCompute, bool iHighCompute, int kType,
 
     int phaseOneSize = secondOrderPhaseOneSize(iLowCompute, iHighCompute, nDimension);
     int phaseTwoSize = secondOrderPhaseTwoSize();
- 
     if (iLowCompute == true) {
         if (iHighCompute == true) {
             switch (kType) {
@@ -1766,7 +1755,6 @@ void launchSecondOrder(bool iLowCompute, bool iHighCompute, int kType,
     secondOrderPhaseTwo<<<1, globalThreadsConfig, phaseTwoSize>>>
                        (devResultT, devLocalIndicesRH, devLocalFsRH, blocksConfig.x);
      
-
     CUDA_SAFE_CALL(cudaMemcpy((void*)train_result, devResultT, 8*sizeof(float), cudaMemcpyDeviceToHost));
      
     float bHigh = *(train_result + 3);

@@ -9,6 +9,7 @@ from codepy.cgen import *
 from codepy.cuda import CudaModule
 import math
 import sys
+import time
 from imp import find_module
 from os.path import join
 
@@ -105,14 +106,14 @@ class SVM(object):
         'cuda': {
             'num_blocks': ['128'],
             'num_threads': ['512'],
-            'max_num_dimensions': ['100']}
+            'max_num_dimensions': ['10000']}
     }
     #TODO: incorporate this into the specializer...
     variant_param_autotune = { 'c++': {'dummy': ['1']},
         'cuda': {
             'num_blocks': ['16'],
             'num_threads': ['512'],
-            'max_num_dimensions': ['100']}
+            'max_num_dimensions': ['10000']}
     }
 
     #Functions used to evaluate whether a particular code variant can be compiled or successfully run a particular input
@@ -185,6 +186,7 @@ class SVM(object):
             SVM.point_data_cpu_copy = X.__array_interface__['data'][0]
             if SVM.use_cuda:
                 gpu_ptr = pycasp.get_GPU_pointer(data_ptr)
+                SVM.point_data_gpu_copy = X.__array_interface__['data'][0]
                 if gpu_ptr != 0: 
                     self.get_asp_mod().alloc_point_data_on_GPU_from_ptr(gpu_ptr, X.shape[0], X.shape[1])
                     SVM.point_data_gpu_copy = X.__array_interface__['data'][0]

@@ -239,10 +239,6 @@ void alloc_components_on_CPU(int M, int D, PyObject *weights, PyObject *means, P
   components.means = ((float*)PyArray_DATA(means));
   components.R = ((float*)PyArray_DATA(covars));
   components.CP = ((float*)PyArray_DATA(comp_probs));
-
-  //for(int i = 0; i<10; i++) {
-  // printf("alloc_means[%d] = %f\n", i, components.means[i]);
-  //}
   
   components.N = (float*) malloc(sizeof(float)*M);
   components.constant = (float*) malloc(sizeof(float)*M);
