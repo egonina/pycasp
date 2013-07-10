@@ -13,7 +13,7 @@ import time
 from imp import find_module
 from os.path import join
 
-import pycasp
+import pycasp.pycasp as pycasp
 
 class SVMParameters(object):
     """
