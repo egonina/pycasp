@@ -348,7 +348,8 @@ class GMM(object):
     def internal_seed_data(self, X, D, N):
         getattr(self.get_asp_mod(),'seed_components_'+self.cvtype)(self.M, D, N)
         self.components_seeded = True
-        self.get_asp_mod().copy_component_data_GPU_to_CPU(self.M, D)
+        if GMM.use_cuda:
+            self.get_asp_mod().copy_component_data_GPU_to_CPU(self.M, D)
 
     def __init__(self, M, D, means=None, covars=None, weights=None, cvtype='diag'): 
         """
@@ -377,6 +378,7 @@ class GMM(object):
         # Create ASP module
         GMM.asp_mod = asp_module.ASPModule(use_cuda=GMM.use_cuda, use_cilk=GMM.use_cilk) 
         if GMM.use_cuda:
+            print "GMM SPECIALIZER: USING CUDA"
             self.insert_base_code_into_listed_modules(['c++'])
             self.insert_non_rendered_code_into_cuda_module()
 
@@ -385,6 +387,7 @@ class GMM(object):
             GMM.asp_mod.backends['c++'].compilable = False # TODO: For now, must force ONLY cuda backend to compile
 
         if GMM.use_cilk:
+            print "GMM SPECIALIZER: USING CILK+"
             self.insert_base_code_into_listed_modules(['cilk'])
             self.insert_non_rendered_code_into_cilk_module()
             self.insert_rendered_code_into_module('cilk')

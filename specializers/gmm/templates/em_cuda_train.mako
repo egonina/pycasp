@@ -9,7 +9,6 @@ boost::python::tuple em_cuda_train${'_'+'_'.join(param_val_list)} (
                              int min_iters,
                              int max_iters) 
 {
-
   // ================= Temp buffer for codevar 2b ================ 
   ${tempbuff_type_name} *temp_buffer_2b = NULL;
 %if covar_version_name.upper() in ['2B','V2B','_V2B']:

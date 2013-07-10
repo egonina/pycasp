@@ -132,7 +132,7 @@ void estep1${'_'+'_'.join(param_val_list)}(float* data, components_t* components
         }
     }
     //estep1 log_add()
-    for(int n=0; n < N; n++) {
+    cilk_for(int n=0; n < N; n++) {
         float finalloglike = MINVALUEFORMINUSLOG;
         for(int m=0; m < M; m++) {
             finalloglike = log_add(finalloglike, component_memberships[m*N+n]);
