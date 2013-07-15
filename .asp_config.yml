@@ -1,0 +1,10 @@
+GMM:
+  autotune: False
+  name_of_backend_to_use: "cuda"
+  template_path: "/disk1/home_user/egonina/pycasp/specializers/gmm/"
+  cuda_device_id: 0
+SVM:
+  autotune: False
+  name_of_backend_to_use: "cuda"
+  template_path: "/disk1/home_user/egonina/pycasp/specializers/svm/"
+  cuda_device_id: 0
