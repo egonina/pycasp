@@ -2,11 +2,12 @@
 #define COVARIANCE_DYNAMIC_RANGE 1E6
 #define MINVALUEFORMINUSLOG -1000.0f
 
-void mvtmeans(float* data_by_event, int num_dimensions, int num_events, float* means) {
-    for(int d=0; d < num_dimensions; d++) {
+void mvtmeans(float* data_by_event, int num_dimensions,
+              int num_events, float* means) {
+    for(int d = 0; d < num_dimensions; d++) {
         means[d] = 0.0;
-        for(int n=0; n < num_events; n++) {
-            means[d] += data_by_event[n*num_dimensions+d];
+        for(int n = 0; n < num_events; n++) {
+            means[d] += data_by_event[n * num_dimensions + d];
         }
         means[d] /= (float) num_events;
     }
@@ -20,12 +21,12 @@ float log_add(float log_a, float log_b) {
     }
   //setting MIN...LOG so small, I don't even need to look
   return (((log_b - log_a) <= MINVALUEFORMINUSLOG) ? log_a : 
-                log_a + (float)(logf(1.0 + (double)(expf((double)(log_b - log_a))))));
+            log_a + (float)(logf(1.0 + (double)(expf((double)(log_b - log_a))))));
 }
 
 void normalize_pi(components_t* components, int num_components) {
     float total = 0;
-    for(int i=0; i<num_components; i++) {
+    for(int i = 0; i<num_components; i++) {
         total += components->pi[i];
     }
     
@@ -120,14 +121,6 @@ int invert_matrix(float* a, int n, float* determinant) {
   float* y = (float*) malloc(sizeof(float)*n*n);
   float* col = (float*) malloc(sizeof(float)*n);
   int* indx = (int*) malloc(sizeof(int)*n);
-  /*
-    printf("\n\nR matrix before LU decomposition:\n");
-    for(i=0; i<n; i++) {
-    for(j=0; j<n; j++) {
-    printf("%.2f ",a[i*n+j]);
-    }
-    printf("\n");
-    }*/
 
   *determinant = 0.0;
   if(ludcmp(a,n,indx,determinant)) {
@@ -180,8 +173,7 @@ int invert_matrix(float* a, int n, float* determinant) {
 #define TINY 1.0e-20
 
 static int
-ludcmp(float *a,int n,int *indx,float *d)
-{
+ludcmp(float *a,int n,int *indx,float *d) {
   int i,imax=0,j,k;
   float big,dum,sum,temp;
   float *vv;
@@ -190,8 +182,7 @@ ludcmp(float *a,int n,int *indx,float *d)
    
   *d=1.0;
    
-  for (i=0;i<n;i++)
-    {
+  for (i=0;i<n;i++) {
       big=0.0;
       for (j=0;j<n;j++)
         if ((temp=fabsf(a[i*n+j])) > big)
@@ -199,33 +190,20 @@ ludcmp(float *a,int n,int *indx,float *d)
       if (big == 0.0)
         return 0; /* Singular matrix  */
       vv[i]=1.0/big;
-    }
+  }
        
    
-  for (j=0;j<n;j++)
-    {  
-      for (i=0;i<j;i++)
-        {
+  for (j=0;j<n;j++) {  
+      for (i=0;i<j;i++) {
           sum=a[i*n+j];
           for (k=0;k<i;k++)
             sum -= a[i*n+k]*a[k*n+j];
           a[i*n+j]=sum;
-        }
-       
-      /*
-        int f,g;
-        printf("\n\nMatrix After Step 1:\n");
-        for(f=0; f<n; f++) {
-        for(g=0; g<n; g++) {
-        printf("%.2f ",a[f*n+g]);
-        }
-        printf("\n");
-        }*/
+      }
        
       big=0.0;
       dum=0.0;
-      for (i=j;i<n;i++)
-        {
+      for (i=j;i<n;i++) {
           sum=a[i*n+j];
           for (k=0;k<j;k++)
             sum -= a[i*n+k]*a[k*n+j];
@@ -233,50 +211,34 @@ ludcmp(float *a,int n,int *indx,float *d)
           dum=vv[i]*fabsf(sum);
           //printf("sum: %f, dum: %f, big: %f\n",sum,dum,big);
           //printf("dum-big: %E\n",fabs(dum-big));
-          if ( (dum-big) >= 0.0 || fabs(dum-big) < 1e-3)
-            {
+          if ( (dum-big) >= 0.0 || fabs(dum-big) < 1e-3) {
               big=dum;
               imax=i;
               //printf("imax: %d\n",imax);
-            }
-        }
+          }
+      }
        
-      if (j != imax)
-        {
-          for (k=0;k<n;k++)
-            {
+      if (j != imax) {
+          for (k=0;k<n;k++) {
               dum=a[imax*n+k];
               a[imax*n+k]=a[j*n+k];
               a[j*n+k]=dum;
-            }
+          }
           *d = -(*d);
           vv[imax]=vv[j];
-        }
+      }
       indx[j]=imax;
-       
-      /*
-        printf("\n\nMatrix after %dth iteration of LU decomposition:\n",j);
-        for(f=0; f<n; f++) {
-        for(g=0; g<n; g++) {
-        printf("%.2f ",a[f][g]);
-        }
-        printf("\n");
-        }
-        printf("imax: %d\n",imax);
-      */
-
 
       /* Change made 3/27/98 for robustness */
       if ( (a[j*n+j]>=0)&&(a[j*n+j]<TINY) ) a[j*n+j]= TINY;
       if ( (a[j*n+j]<0)&&(a[j*n+j]>-TINY) ) a[j*n+j]= -TINY;
 
-      if (j != n-1)
-        {
+      if (j != n-1) {
           dum=1.0/(a[j*n+j]);
           for (i=j+1;i<n;i++)
             a[i*n+j] *= dum;
-        }
-    }
+      }
+  }
   free(vv);
   return(1);
 }
@@ -284,14 +246,12 @@ ludcmp(float *a,int n,int *indx,float *d)
 #undef TINY
 
 static void
-lubksb(float *a,int n,int *indx,float *b)
-{
+lubksb(float *a,int n,int *indx,float *b) {
   int i,ii,ip,j;
   float sum;
 
   ii = -1;
-  for (i=0;i<n;i++)
-    {
+  for (i=0;i<n;i++) {
       ip=indx[i];
       sum=b[ip];
       b[ip]=b[i];
@@ -301,12 +261,11 @@ lubksb(float *a,int n,int *indx,float *b)
       else if (sum)
         ii=i;
       b[i]=sum;
-    }
-  for (i=n-1;i>=0;i--)
-    {
+  }
+  for (i=n-1;i>=0;i--) {
       sum=b[i];
       for (j=i+1;j<n;j++)
         sum -= a[i*n+j]*b[j];
       b[i]=sum/a[i*n+i];
-    }
+  }
 }
