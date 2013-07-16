@@ -78,29 +78,39 @@ class SVM(object):
     """
     The specialized SVM abstraction. Based on the GMM specializer.
     """
-    #Checking specializer configuration, compiler availability and platform features.
-    #TODO: We track this stuff in singleton variables because this specializer only supports using one backend device for all SVM instances running from the same config file.
+    # Checking specializer configuration, compiler availability and platform features.
+    # TODO: We track this stuff in singleton variables because this specializer
+    # only supports using one backend device for all SVM instances running from the same config file.
     platform = PlatformDetector()
     config = ConfigReader('SVM')
     cuda_device_id = config.get_option('cuda_device_id')
     template_path = config.get_option('template_path')
     autotune = config.get_option('autotune')
-    names_of_backends_to_use = [config.get_option('name_of_backend_to_use')] #TODO: how to specify multiple backends in config file?
+    names_of_backends_to_use = [config.get_option('name_of_backend_to_use')] 
     use_cuda = False
+    # Currently assume only one backend is requested
+    requested_backend = names_of_backends_to_use[0]
+    if requested_backend != "cuda":
+        print "ERROR: You asked for a SVM specializer backend that is not supported. "\
+                "Currently SVM specializer only supports CUDA backend."
+        sys.exit()
+
     platform_info = {}
-    if 'cuda' in names_of_backends_to_use:
-        if 'nvcc' in platform.get_compilers() and platform.get_num_cuda_devices() > 0:
-            use_cuda = True
-            platform.set_cuda_device(cuda_device_id)
-            platform_info['cuda'] = platform.get_cuda_info()
-        else: print "WARNING: You asked for a CUDA backend but no compiler was found or no cuda device are detected by the CUDA driver."
+    if 'nvcc' in platform.get_compilers() and platform.get_num_cuda_devices() > 0:
+        use_cuda = True
+        platform.set_cuda_device(cuda_device_id)
+        platform_info['cuda'] = platform.get_cuda_info()
+    else: print "WARNING: You asked for a CUDA backend but no compiler was"\
+                "found or no cuda device are detected by the CUDA driver."
             
-    #Singleton ASP module shared by all instances of SVM. This tracks all the internal representation of specialized functions. 
+    # Singleton ASP module shared by all instances of SVM.
+    # This tracks all the internal representation of specialized functions. 
     asp_mod = None
 
     def get_asp_mod(self): return SVM.asp_mod or self.initialize_asp_mod()
 
-    #Internal defaults for the specializer. Application writers shouldn't have to know about these, but changing them might affect the API. 
+    # Internal defaults for the specializer.
+    # Application writers shouldn't have to know about these, but changing them might affect the API. 
 
     variant_param_default = { 'c++': {'dummy': ['1']},
         'cuda': {
@@ -108,7 +118,7 @@ class SVM(object):
             'num_threads': ['512'],
             'max_num_dimensions': ['10000']}
     }
-    #TODO: incorporate this into the specializer...
+    # TODO: incorporate this into the specializer...
     variant_param_autotune = { 'c++': {'dummy': ['1']},
         'cuda': {
             'num_blocks': ['16'],
@@ -116,11 +126,13 @@ class SVM(object):
             'max_num_dimensions': ['10000']}
     }
 
-    #Functions used to evaluate whether a particular code variant can be compiled or successfully run a particular input
+    # Functions used to evaluate whether a particular code variant can be
+    # compiled or successfully run a particular input
 
-    #TODO: incorporate this into the specializer...
+    # TODO: incorporate this into the specializer...
     def cuda_compilable_limits(param_dict, gpu_info):
-        #Determine if a code variant described by param_dict will compile on a device described by gpu_info
+        # Determine if a code variant described by param_dict will
+        # compile on a device described by gpu_info
         tpb = int(gpu_info['max_threads_per_block'])
         shmem = int(gpu_info['max_shared_memory_per_block'])
         gpumem = int(gpu_info['total_mem'])
@@ -131,7 +143,8 @@ class SVM(object):
 
         compilable = False
 
-        if threads <= tpb: # and threads*4 < shmem: #TODO: KG, add shared memory constraints based on the SVM code
+        # and threads*4 < shmem: #TODO: KG, add shared memory constraints based on the SVM code
+        if threads <= tpb: 
             compilable = True
         return compilable
 
@@ -141,7 +154,8 @@ class SVM(object):
     }
 
     def cuda_runable_limits(param_dict, gpu_info):
-        #Return a lambda func that can determine whether the code variant described by param_dict can process the input args and kwargs
+        # Return a lambda func that can determine whether
+        # the code variant described by param_dict can process the input args and kwargs
         tpb = int(gpu_info['max_threads_per_block'])
         shmem = int(gpu_info['max_shared_memory_per_block'])
         gpumem = int(gpu_info['total_mem'])
@@ -150,8 +164,8 @@ class SVM(object):
         max_n = gpumem / (max_d*4)
 
         runnable = False 
-
-        if threads <= tpb: # and threads*4 < shmem: #TODO: KG, add shared memory constraints based on the SVM code
+        # and threads*4 < shmem: #TODO: KG, add shared memory constraints based on the SVM code
+        if threads <= tpb: 
             runnable = True
         return runnable
 
@@ -176,7 +190,7 @@ class SVM(object):
     classify_result_gpu_copy = None
     classify_result_cpu_copy = None
     
-    #Internal functions to allocate and deallocate component and event data on the CPU and GPU
+    # Internal functions to allocate and deallocate data on the CPU and GPU
     def internal_alloc_point_data(self, X):
         data_ptr = X.__array_interface__['data'][0]
         if SVM.point_data_cpu_copy != data_ptr:
@@ -334,7 +348,7 @@ class SVM(object):
         self.internal_free_classify_alphas()
         self.internal_free_classify_result()
 
-    #Called the first time a SVM instance tries to use a specialized function
+    # Called the first time a SVM instance tries to use a specialized function
     def initialize_asp_mod(self):
         # Create ASP module
         SVM.asp_mod = asp_module.ASPModule(use_cuda=SVM.use_cuda) 
@@ -359,11 +373,12 @@ class SVM(object):
     #Functions used in the template rendering process, specific to particular backends
 
     def insert_cuda_backend_render_func(self):
-        #param_dict['supports_float32_atomic_add'] = SVM.platform_info['cuda']['supports_float32_atomic_add']
-        cu_kern_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/svm_cuda_kernels.mako")
+        cu_kern_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/svm_cuda_kernels.mako")
         cu_kern_rend = cu_kern_tpl.render()
         SVM.asp_mod.add_to_module([Line(cu_kern_rend)],'cuda')
-        c_decl_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/svm_launch_decl.mako") 
+        c_decl_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/svm_launch_decl.mako") 
         c_decl_rend  = c_decl_tpl.render()
         SVM.asp_mod.add_to_preamble(c_decl_rend,'c++') #TODO: <4.1 hack
         base_system_header_names = [ 'stdlib.h', 'stdio.h', 'sys/time.h']
@@ -441,10 +456,12 @@ class SVM(object):
 
     def insert_base_code_into_listed_modules(self, names_of_backends):
         #Add code to all backends that is used by all backends
-        c_base_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/svm_base_helpers.mako")
+        c_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/svm_base_helpers.mako")
         c_base_rend = c_base_tpl.render()
 
-        base_system_header_names = [ 'stdlib.h', 'stdio.h', 'string.h', 'math.h', 'Python.h', 'sys/time.h', 'vector', 'list', 'numpy/arrayobject.h', 'cublas.h']
+        base_system_header_names = ['stdlib.h', 'stdio.h', 'string.h', 'math.h',\
+                'Python.h', 'sys/time.h', 'vector', 'list', 'numpy/arrayobject.h', 'cublas.h']
         for b_name in names_of_backends:
             for header in base_system_header_names: 
                 SVM.asp_mod.add_to_preamble([Include(header, True)], b_name)
@@ -464,10 +481,12 @@ class SVM(object):
             SVM.asp_mod.add_helper_function(fname, "", 'cuda')
         
         #Add bodies of helper functions
-        c_base_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/svm_cuda_host_helpers.mako")
+        c_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/svm_cuda_host_helpers.mako")
         c_base_rend  = c_base_tpl.render()
         SVM.asp_mod.add_to_module([Line(c_base_rend)],'c++')
-        cu_base_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/svm_cuda_device_helpers.mako")
+        cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/svm_cuda_device_helpers.mako")
         cu_base_rend = cu_base_tpl.render()
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'cuda')
         #Add Boost interface links for helper functions
@@ -493,16 +512,19 @@ class SVM(object):
                                       "train", "classify"] 
         for fname in names_of_cuda_helper_funcs:
             SVM.asp_mod.add_helper_function(fname,"",'cuda')
-        c_base_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/cache_controller.mako")
+        c_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/cache_controller.mako")
         c_base_rend  = c_base_tpl.render()
         SVM.asp_mod.add_to_module([Line(c_base_rend)],'cuda')
 
     def insert_rendered_code_into_cuda_module(self):
         self.insert_cuda_backend_render_func()
-        cu_base_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/training/svm_train.mako")
+        cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/training/svm_train.mako")
         cu_base_rend = cu_base_tpl.render(num_blocks = 128, num_threads = 512)
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'c++')
-        cu_base_tpl = AspTemplate.Template(filename = SVM.template_path + "templates/classification/svm_classify.mako")
+        cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
+                "templates/classification/svm_classify.mako")
         cu_base_rend = cu_base_tpl.render(num_blocks = 128, num_threads = 512)
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'c++')
 
