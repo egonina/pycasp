@@ -641,6 +641,41 @@ class GMM(object):
         self.internal_free_event_data()
         self.internal_free_component_data()
         self.internal_free_eval_data()
+
+    # ===== Specializer functions used by the app writers =====
+
+    # Getters
+
+    def get_all_component_weights(self):
+        return self.components.weights
+
+    def get_one_component_weights(self, component_id):
+        return self.components.weights[component_id]
+
+    def get_all_component_means(self):
+        return self.components.means
+
+    def get_one_component_means(self, component_id):
+        return self.components.means[component_id]
+
+    def get_all_component_full_covariance(self):
+        return self.components.covars
+
+    def get_one_component_full_covariance(self, component_id):
+        return self.components.covars[component_id]
+
+    def get_all_component_diag_covariance(self):
+        full_covar = self.components.covars
+        diags = []
+        for m in range(self.M):
+            diags.append(np.diag(full_covar[m]))
+        return np.concatenate(diags)
+
+    def get_one_component_diag_covariance(self, component_id):
+        full_covar = self.components.covars[component_id]
+        return np.diag(full_covar)
+
+    # Training and Evaluation of GMM
     
     def train_using_python(self, input_data, iters=10):
         from sklearn import mixture
@@ -699,10 +734,9 @@ class GMM(object):
         self.eval_data.likelihood = self.get_asp_mod().train_on_subset(self.M, self.D, N, K)[0]
         return self
         
-        
-        #train on subset
-        #collect indices in python
-        #gather in C
+    # train on subset
+    # collect indices in python
+    # gather in C
     def train_on_subset_c(self, input_data, index_list):
         N = input_data.shape[0]
         K = index_list.shape[0] #number of indices

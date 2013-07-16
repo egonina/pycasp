@@ -96,5 +96,31 @@ class SyntheticDataTests(unittest.TestCase):
         for a,b in zip(Y0, Y1): self.assertAlmostEqual(a,b)
         self.assertTrue(len(set(Y0)) > 1)
 
+    def test_getter_methods(self):
+        gmm0 = GMM(self.M, self.D, cvtype='diag')
+        likelihood0 = gmm0.train(self.X)
+        all_weights0  = gmm0.get_all_component_weights()
+        all_means0 = gmm0.get_all_component_means()
+        all_diag_covars0 = gmm0.get_all_component_diag_covariance()
+
+        gmm1 = GMM(self.M, self.D, cvtype='diag')
+        likelihood1 = gmm1.train(self.X)
+        all_weights1  = gmm1.get_all_component_weights()
+        all_means1 = gmm1.get_all_component_means()
+        all_diag_covars1 = gmm1.get_all_component_diag_covariance()
+
+        self.assertAlmostEqual(likelihood0, likelihood1, places=3)
+
+        for (a, b) in zip(all_weights0, all_weights1):
+            self.assertAlmostEqual(a, b)
+
+        for m in range(gmm0.M):
+            for a, b in zip(all_means0[m], all_means1[m]):
+                self.assertAlmostEqual(a, b)
+
+        for a, b in zip(all_diag_covars0, all_diag_covars1):
+            self.assertAlmostEqual(a, b)
+
+
 if __name__ == '__main__':
     unittest.main()
