@@ -100,8 +100,9 @@ class SVM(object):
         use_cuda = True
         platform.set_cuda_device(cuda_device_id)
         platform_info['cuda'] = platform.get_cuda_info()
-    else: print "WARNING: You asked for a CUDA backend but no compiler was"\
+    else: print "ERROR: You asked for a CUDA backend but no compiler was"\
                 "found or no cuda device are detected by the CUDA driver."
+          sys.exit()
             
     # Singleton ASP module shared by all instances of SVM.
     # This tracks all the internal representation of specialized functions. 

@@ -49,7 +49,7 @@ class SyntheticDataTests(unittest.TestCase):
         self.t1_labels, self.t1_data = self.read_data("tests/svm_sample_data/svm_train_1.svm")
         self.t2_labels, self.t2_data = self.read_data("tests/svm_sample_data/svm_train_2.svm")
 
-        # read in training data
+        # read in testing data
         self.c_labels, self.c_data = self.read_data("tests/svm_sample_data/svm_classify.svm")
 
     def test_training_and_classify_once(self):

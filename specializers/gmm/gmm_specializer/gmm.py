@@ -92,13 +92,16 @@ class GMM(object):
             use_cuda = True
             platform.set_cuda_device(cuda_device_id)
             platform_info['cuda'] = platform.get_cuda_info()
-        else: print "WARNING: You asked for a CUDA backend but no compiler was found"\
+        else: print "ERROR: You asked for a CUDA backend but no compiler was found"\
                     "or no cuda device are detected by the CUDA driver."
+              sys.exit()
     if 'cilk' in names_of_backends_to_use:
         if 'icc' in platform.get_compilers():
             use_cilk = True
             platform_info['cilk'] = platform.get_cpu_info()
-        else: print "WARNING: You asked for a Cilk backend but no compiler was found."
+        else:
+            print "ERROR: You asked for a Cilk backend but no compiler was found."
+            sys.exit()
 
     # Singleton ASP module shared by all instances of GMM.
     # This tracks all the internal representation of specialized functions.
