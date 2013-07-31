@@ -219,7 +219,7 @@ void dealloc_events_on_CPU() {
 
 // ================== Index list dellocation on CPU  ================= :
 void dealloc_index_list_on_CPU() {
-    free(index_list);
+    //free(index_list);
 }
 
 // ==================== Cluster data deallocation on CPU =================  

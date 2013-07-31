@@ -487,9 +487,11 @@ class GMM(object):
 
         #TODO: Move this back into insert_base_code_into_listed_modules for cuda 4.1
         names_of_helper_funcs = ["alloc_events_on_CPU",\
+                                 "alloc_index_list_on_CPU",\
                                  "alloc_components_on_CPU",\
                                  "alloc_evals_on_CPU",\
                                  "dealloc_events_on_CPU",\
+                                 "dealloc_index_list_on_CPU",\
                                  "dealloc_components_on_CPU",\
                                  "dealloc_temp_components_on_CPU",\
                                  "dealloc_evals_on_CPU",\
@@ -621,7 +623,7 @@ class GMM(object):
         key_func = lambda *args, **kwargs: hashlib.md5(str([args[0],args[1],\
                 math.floor(math.log10(args[2]))])+str(kwargs)).hexdigest()
         for cvtype in GMM.cvtype_name_list:
-            func_names = ['train', 'eval', 'seed_components']
+            func_names = ['train', 'train_on_subset', 'eval', 'seed_components']
             all_variants = {}
             self.generate_permutations( self.variant_param_spaces[backend_name].keys(),
                                         self.variant_param_spaces[backend_name].values(), {}, 
@@ -718,9 +720,9 @@ class GMM(object):
         
         return self.eval_data.likelihood
 
-    #TODO: expose only one function to the domain programmer
-    #handle selection of gather mechanisms internally
-    def train_on_subset(self, input_data, index_list):
+    # TODO: expose only one function to the domain programmer
+    # handle selection of gather mechanisms internally
+    def train_on_subset(self, input_data, index_list, min_em_iters=1, max_em_iters=10):
         N = input_data.shape[0]
         K = index_list.shape[0] #number of indices
         
@@ -734,7 +736,8 @@ class GMM(object):
         if not self.components_seeded:
             self.internal_seed_data(input_data, input_data.shape[1], input_data.shape[0])
             
-        self.eval_data.likelihood = self.get_asp_mod().train_on_subset(self.M, self.D, N, K)[0]
+        self.eval_data.likelihood = getattr(self.get_asp_mod(),\
+                'train_on_subset_'+self.cvtype)(self.M, self.D, N, K, min_em_iters, max_em_iters)[0]
         return self
         
     # train on subset
