@@ -62,7 +62,6 @@ class GMM(object):
     """
     The specialized GMM abstraction.
     """
-
     # Checking specializer configuration, compiler availability and platform features.
     # TODO: We track this stuff in singleton variables because this specializer
     # only supports using one backend device for all GMM instances running from the same config file.
@@ -92,9 +91,10 @@ class GMM(object):
             use_cuda = True
             platform.set_cuda_device(cuda_device_id)
             platform_info['cuda'] = platform.get_cuda_info()
-        else: print "ERROR: You asked for a CUDA backend but no compiler was found"\
+        else:
+            print "ERROR: You asked for a CUDA backend but no compiler was found"\
                     "or no cuda device are detected by the CUDA driver."
-              sys.exit()
+            sys.exit()
     if 'cilk' in names_of_backends_to_use:
         if 'icc' in platform.get_compilers():
             use_cilk = True

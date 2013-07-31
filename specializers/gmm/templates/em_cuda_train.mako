@@ -75,10 +75,10 @@ boost::python::tuple em_cuda_train${'_'+'_'.join(param_val_list)} (int num_compo
   // It re-estimates parameters, re-computes constants, and then regroups the events
   // These steps keep repeating until the change in likelihood is less than some epsilon        
 
-  //while(iters < min_iters || (iters < max_iters && fabs(change) > epsilon)) {
-  while(iters < min_iters || (iters < max_iters && change > epsilon)) {
+  while(iters < min_iters || (iters < max_iters && fabs(change) > epsilon)) {
+  //while(iters < min_iters || (iters < max_iters && change > epsilon)) {
 
-    printf("Training iteration: %u\n", iters);
+    //printf("Training iteration: %u\n", iters);
     old_likelihood = likelihood;
     
     estep1_launch${'_'+'_'.join(param_val_list)}(d_fcs_data_by_dimension,
@@ -110,7 +110,7 @@ boost::python::tuple em_cuda_train${'_'+'_'.join(param_val_list)} (int num_compo
       likelihood += likelihoods[i]; 
     }
 
-    printf("Likelihood: %g\n", likelihood);
+    //printf("Likelihood: %g\n", likelihood);
     // This kernel computes a new N, pi isn't updated until compute_constants though
     mstep_N_launch${'_'+'_'.join(param_val_list)}(d_fcs_data_by_event,
                                                   d_components,
