@@ -377,7 +377,7 @@ class SVM(object):
     def insert_cuda_backend_render_func(self):
         cu_kern_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/training/svm_cuda_kernels.mako")
-        cu_kern_rend = cu_kern_tpl.render()
+        cu_kern_rend = cu_kern_tpl.render(num_threads = 128, sh_mem_size=500)
         SVM.asp_mod.add_to_module([Line(cu_kern_rend)],'cuda')
         c_decl_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/training/svm_launch_decl.mako") 
@@ -523,11 +523,11 @@ class SVM(object):
         self.insert_cuda_backend_render_func()
         cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/training/svm_train.mako")
-        cu_base_rend = cu_base_tpl.render(num_blocks = 128, num_threads = 512)
+        cu_base_rend = cu_base_tpl.render(num_threads = 128, sh_mem_size = 500)
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'c++')
         cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/classification/svm_classify.mako")
-        cu_base_rend = cu_base_tpl.render(num_blocks = 128, num_threads = 512)
+        cu_base_rend = cu_base_tpl.render(num_threads = 128, sh_mem_size=500)
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'c++')
 
     def train(self, input_data, labels, kernel_type, 

@@ -1,8 +1,8 @@
 // ================= FRAMEWORK =================
 #define VERSION 0.1
 
-#define BLOCKSIZE 512 
-#define DIM 2000 
+#define BLOCKSIZE 128 
+#define DIM 500 
 #define IMUL(a, b) __mul24(a, b)
 
 #ifdef __DEVICE_EMULATION__

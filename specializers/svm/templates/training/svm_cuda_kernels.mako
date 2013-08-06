@@ -445,10 +445,10 @@ __global__ void	firstOrderPhaseOne(float* devData, int devDataPitchInFloats,
                                    int iLowCacheIndex, int iHighCacheIndex,
                                    int* devLocalIndicesRL, int* devLocalIndicesRH,
                                    float* devLocalFsRL, float* devLocalFsRH) {
-    __shared__ int tempLocalIndices[BLOCKSIZE];
-    __shared__ float tempLocalFs[BLOCKSIZE];
-    __shared__ float xIHigh[DIM];
-    __shared__ float xILow[DIM];
+    __shared__ int tempLocalIndices[${num_threads}];
+    __shared__ float tempLocalFs[${num_threads}];
+    __shared__ float xIHigh[${sh_mem_size}];
+    __shared__ float xILow[${sh_mem_size}];
     
     if (iHighCompute) {
       //Load xIHigh into shared memory
@@ -509,7 +509,7 @@ __global__ void	firstOrderPhaseOne(float* devData, int devDataPitchInFloats,
             lowKernel = devCache[(devCachePitchInFloats * iLowCacheIndex) + globalIndex];
         }
 
-        if(nDimension < DIM)
+        if(nDimension < ${sh_mem_size})
         {
             if (iHighCompute && iLowCompute) {
               Kernel::dualKernel(devData + globalIndex,
@@ -611,8 +611,8 @@ __global__ void firstOrderPhaseTwo(float* devData, int devDataPitchInFloats,
                                    float parameterA, float parameterB, float parameterC,
                                    int* devLocalIndicesRL, int* devLocalIndicesRH,
                                    float* devLocalFsRL, float* devLocalFsRH, int inputSize) {
-    __shared__ int tempIndices[BLOCKSIZE];
-    __shared__ float tempFs[BLOCKSIZE];
+    __shared__ int tempIndices[${num_threads}];
+    __shared__ float tempFs[${num_threads}];
     
     //Load elements
     if (threadIdx.x < inputSize) {
@@ -622,8 +622,8 @@ __global__ void firstOrderPhaseTwo(float* devData, int devDataPitchInFloats,
         tempFs[threadIdx.x] = FLT_MAX;
     }
 
-    if (inputSize > BLOCKSIZE) {
-        for (int i = threadIdx.x + BLOCKSIZE; i < inputSize; i += blockDim.x) {
+    if (inputSize > ${num_threads}) {
+        for (int i = threadIdx.x + ${num_threads}; i < inputSize; i += blockDim.x) {
             argMin(tempIndices[threadIdx.x], tempFs[threadIdx.x],
                    devLocalIndicesRH[i], devLocalFsRH[i],
                    tempIndices + threadIdx.x, tempFs + threadIdx.x);
@@ -643,8 +643,8 @@ __global__ void firstOrderPhaseTwo(float* devData, int devDataPitchInFloats,
         tempFs[threadIdx.x] = -FLT_MAX;
     }
 
-    if (inputSize > BLOCKSIZE) {
-        for (int i = threadIdx.x + BLOCKSIZE; i < inputSize; i += blockDim.x) {
+    if (inputSize > ${num_threads}) {
+        for (int i = threadIdx.x + ${num_threads}; i < inputSize; i += blockDim.x) {
             argMax(tempIndices[threadIdx.x], tempFs[threadIdx.x],
                    devLocalIndicesRL[i], devLocalFsRL[i],
                    tempIndices + threadIdx.x, tempFs + threadIdx.x);
@@ -751,10 +751,10 @@ __global__ void	secondOrderPhaseOne(float* devData, int devDataPitchInFloats,
                                     int iHighCacheIndex, int* devLocalIndicesRH,
                                     float* devLocalFsRH) {
   
-    __shared__ int tempLocalIndices[BLOCKSIZE];
-    __shared__ float tempLocalFs[BLOCKSIZE];
-    __shared__ float xILow[DIM];
-    __shared__ float xIHigh[DIM];
+    __shared__ int tempLocalIndices[${num_threads}];
+    __shared__ float tempLocalFs[${num_threads}];
+    __shared__ float xILow[${sh_mem_size}];
+    __shared__ float xIHigh[${sh_mem_size}];
 
     if (iHighCompute) {
         coopExtractRowVector(devTransposedData, devTransposedDataPitchInFloats,
@@ -801,7 +801,7 @@ __global__ void	secondOrderPhaseOne(float* devData, int devDataPitchInFloats,
         } else {
             lowKernel = devCache[(devCachePitchInFloats * iLowCacheIndex) + globalIndex];
         }
-        if(nDimension < DIM) {
+        if(nDimension < ${sh_mem_size}) {
             if (iHighCompute && iLowCompute) {
                 Kernel::dualKernel(devData + globalIndex, devDataPitchInFloats,
                                    devData + globalIndex + (devDataPitchInFloats * nDimension),
@@ -866,8 +866,8 @@ __global__ void	secondOrderPhaseOne(float* devData, int devDataPitchInFloats,
 
 __global__ void secondOrderPhaseTwo(void* devResultT, int* devLocalIndicesRH,
                                     float* devLocalFsRH, int inputSize) {
-    __shared__ int tempIndices[BLOCKSIZE];
-    __shared__ float tempFs[BLOCKSIZE];
+    __shared__ int tempIndices[${num_threads}];
+    __shared__ float tempFs[${num_threads}];
   
     //Load elements
     if (threadIdx.x < inputSize) {
@@ -877,8 +877,8 @@ __global__ void secondOrderPhaseTwo(void* devResultT, int* devLocalIndicesRH,
        tempFs[threadIdx.x] = FLT_MAX;
     }
   
-    if (inputSize > BLOCKSIZE) {
-        for (int i = threadIdx.x + BLOCKSIZE; i < inputSize; i += blockDim.x) {
+    if (inputSize > ${num_threads}) {
+        for (int i = threadIdx.x + ${num_threads}; i < inputSize; i += blockDim.x) {
           argMin(tempIndices[threadIdx.x], tempFs[threadIdx.x],
                  devLocalIndicesRH[i], devLocalFsRH[i],
                  tempIndices + threadIdx.x, tempFs + threadIdx.x);
@@ -906,9 +906,9 @@ __global__ void secondOrderPhaseThree(float* devData, int devDataPitchInFloats,
                                       int nDimension, int nPoints, float parameterA,
                                       float parameterB, float parameterC, float* devLocalFsRL,
                                       int* devLocalIndicesMaxObj, float* devLocalObjsMaxObj) {
-    __shared__ float xIHigh[DIM];
-    __shared__ int tempIndices[BLOCKSIZE];
-    __shared__ float tempValues[BLOCKSIZE];
+    __shared__ float xIHigh[${sh_mem_size}];
+    __shared__ int tempIndices[${num_threads}];
+    __shared__ float tempValues[${num_threads}];
     __shared__ float iHighSelfKernel;
       
     if (iHighCompute) {
@@ -943,7 +943,7 @@ __global__ void secondOrderPhaseThree(float* devData, int devDataPitchInFloats,
         }
 
         if (iHighCompute) {
-            if(nDimension < DIM) {
+            if(nDimension < ${sh_mem_size}) {
                 highKernel = Kernel::kernel(devData + globalIndex, devDataPitchInFloats,
                                             devData + globalIndex + (devDataPitchInFloats * nDimension),
                                             xIHigh, 1, parameterA, parameterB, parameterC);
@@ -1017,8 +1017,8 @@ __global__ void secondOrderPhaseFour(float* devLabels, float* devKernelDiag,
                                      float* devLocalFsRL, int* devLocalIndicesMaxObj,
                                      float* devLocalObjsMaxObj, int inputSize,
                                      int iteration) {
-    __shared__ int tempIndices[BLOCKSIZE];
-    __shared__ float tempValues[BLOCKSIZE];
+    __shared__ int tempIndices[${num_threads}];
+    __shared__ float tempValues[${num_threads}];
     
     if (threadIdx.x < inputSize) {
         tempIndices[threadIdx.x] = devLocalIndicesMaxObj[threadIdx.x];
@@ -1028,8 +1028,8 @@ __global__ void secondOrderPhaseFour(float* devLabels, float* devKernelDiag,
         tempIndices[threadIdx.x] = -1;
     }
 
-    if (inputSize > BLOCKSIZE) {
-        for (int i = threadIdx.x + BLOCKSIZE; i < inputSize; i += blockDim.x) {
+    if (inputSize > ${num_threads}) {
+        for (int i = threadIdx.x + ${num_threads}; i < inputSize; i += blockDim.x) {
             argMax(tempIndices[threadIdx.x], tempValues[threadIdx.x],
                    devLocalIndicesMaxObj[i], devLocalObjsMaxObj[i],
                    tempIndices + threadIdx.x, tempValues + threadIdx.x);
@@ -1051,8 +1051,8 @@ __global__ void secondOrderPhaseFour(float* devLabels, float* devKernelDiag,
         tempValues[threadIdx.x] = -FLT_MAX;
     }
     
-    if (inputSize > BLOCKSIZE) {
-        for (int i = threadIdx.x + BLOCKSIZE; i < inputSize; i += blockDim.x) {
+    if (inputSize > ${num_threads}) {
+        for (int i = threadIdx.x + ${num_threads}; i < inputSize; i += blockDim.x) {
           maxOperator(tempValues[threadIdx.x], devLocalFsRL[i],
                       tempValues + threadIdx.x);
         }
@@ -1895,7 +1895,7 @@ __global__ void makeSelfDots(float* devSource,
                              float* devDest, int sourceCount,
                              int sourceLength) {
     float dot = 0;
-    int index = BLOCKSIZE * blockIdx.x + threadIdx.x;
+    int index = ${num_threads} * blockIdx.x + threadIdx.x;
     
     if (index < sourceCount) {
         for (int i = 0; i < sourceLength; i++) {
@@ -1928,24 +1928,25 @@ void launchMakeSelfDots(float* devSource,
  * @param devDataDots a vector containing ||data_i||^2 for all i in [0, nPoints - 1]
  * @param nSV the number of Support Vectors in the classifier
  */
-__global__ void makeDots(float* devDots, int devDotsPitchInFloats, float* devSVDots, float* devDataDots, int nSV, int nPoints) {
-    __shared__ float localSVDots[BLOCKSIZE];
-    __shared__ float localDataDots[BLOCKSIZE];
-    int svIndex = IMUL(BLOCKSIZE, blockIdx.x) + threadIdx.x;
+__global__ void makeDots(float* devDots,
+                         int devDotsPitchInFloats, float* devSVDots, float* devDataDots, int nSV, int nPoints) {
+    __shared__ float localSVDots[${num_threads}];
+    __shared__ float localDataDots[${num_threads}];
+    int svIndex = IMUL(${num_threads}, blockIdx.x) + threadIdx.x;
     
     if (svIndex < nSV) {
    	     localSVDots[threadIdx.x] = *(devSVDots + svIndex);
     }
     
-    int dataIndex = BLOCKSIZE * blockIdx.y + threadIdx.x;
+    int dataIndex = ${num_threads} * blockIdx.y + threadIdx.x;
     if (dataIndex < nPoints) {
          localDataDots[threadIdx.x] = *(devDataDots + dataIndex);
     }
     
     __syncthreads();
     
-    dataIndex = BLOCKSIZE * blockIdx.y;
-    for(int i = 0; i < BLOCKSIZE; i++, dataIndex++) {
+    dataIndex = ${num_threads} * blockIdx.y;
+    for(int i = 0; i < ${num_threads}; i++, dataIndex++) {
          if ((svIndex < nSV) && (dataIndex < nPoints)) {
               *(devDots + IMUL(devDotsPitchInFloats, dataIndex) + svIndex) =
                           localSVDots[threadIdx.x] + localDataDots[i];
