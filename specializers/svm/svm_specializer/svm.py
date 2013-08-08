@@ -100,6 +100,10 @@ class SVM(object):
         use_cuda = True
         platform.set_cuda_device(cuda_device_id)
         platform_info['cuda'] = platform.get_cuda_info()
+        num_cuda_threads = platform_info['cuda']['max_threads_per_block']
+        # hand-tuned calculation of shared memory limits given GPU shared memory size
+        # and the SVM calculation. Tested on GTX285 and GTX480.
+        cuda_sh_mem_size = (platform_info['cuda']['max_shared_memory_per_block'] / 1024) * 90 
     else:
         print "ERROR: You asked for a CUDA backend but no compiler was"\
                 "found or no cuda device are detected by the CUDA driver."
@@ -377,7 +381,7 @@ class SVM(object):
     def insert_cuda_backend_render_func(self):
         cu_kern_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/training/svm_cuda_kernels.mako")
-        cu_kern_rend = cu_kern_tpl.render(num_threads = 128, sh_mem_size=500)
+        cu_kern_rend = cu_kern_tpl.render(num_threads = SVM.num_cuda_threads, sh_mem_size = SVM.cuda_sh_mem_size)
         SVM.asp_mod.add_to_module([Line(cu_kern_rend)],'cuda')
         c_decl_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/training/svm_launch_decl.mako") 
@@ -523,11 +527,11 @@ class SVM(object):
         self.insert_cuda_backend_render_func()
         cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/training/svm_train.mako")
-        cu_base_rend = cu_base_tpl.render(num_threads = 128, sh_mem_size = 500)
+        cu_base_rend = cu_base_tpl.render(num_threads = SVM.num_cuda_threads, sh_mem_size = SVM.cuda_sh_mem_size)
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'c++')
         cu_base_tpl = AspTemplate.Template(filename = SVM.template_path +\
                 "templates/classification/svm_classify.mako")
-        cu_base_rend = cu_base_tpl.render(num_threads = 128, sh_mem_size=500)
+        cu_base_rend = cu_base_tpl.render(num_threads = SVM.num_cuda_threads, sh_mem_size = SVM.cuda_sh_mem_size)
         SVM.asp_mod.add_to_module([Line(cu_base_rend)],'c++')
 
     def train(self, input_data, labels, kernel_type, 
