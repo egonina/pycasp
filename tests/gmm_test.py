@@ -43,8 +43,8 @@ class SyntheticDataTests(unittest.TestCase):
         covars1 = gmm1.components.covars.flatten()
 
         self.assertAlmostEqual(likelihood0, likelihood1, places=3)
-        for a,b in zip(means0, means1):   self.assertAlmostEqual(a,b)
-        for a,b in zip(covars0, covars1): self.assertAlmostEqual(a,b)
+        for a,b in zip(means0, means1):   self.assertAlmostEqual(a,b, places=3)
+        for a,b in zip(covars0, covars1): self.assertAlmostEqual(a,b, places=3)
 
     def test_prediction_once(self):
         print "test prediction once"
@@ -56,14 +56,12 @@ class SyntheticDataTests(unittest.TestCase):
         likelihood1 = gmm1.train(self.X)
         Y1 = gmm1.predict(self.X)
 
-        for a,b in zip(Y0, Y1): self.assertAlmostEqual(a,b)
+        for a,b in zip(Y0, Y1): self.assertAlmostEqual(a,b, places=3)
         self.assertTrue(len(set(Y0)) > 1)
 
     def test_training_repeat(self):
         print "test training repeat"
         gmm0 = GMM(self.M, self.D, cvtype='diag')
-        likelihood0 = gmm0.train(self.X)
-        likelihood0 = gmm0.train(self.X)
         likelihood0 = gmm0.train(self.X)
         likelihood0 = gmm0.train(self.X)
         likelihood0 = gmm0.train(self.X)
@@ -74,14 +72,12 @@ class SyntheticDataTests(unittest.TestCase):
         likelihood1 = gmm1.train(self.X)
         likelihood1 = gmm1.train(self.X)
         likelihood1 = gmm1.train(self.X)
-        likelihood1 = gmm1.train(self.X)
-        likelihood1 = gmm1.train(self.X)
         means1  = gmm1.components.means.flatten()
         covars1 = gmm1.components.covars.flatten()
 
         self.assertAlmostEqual(likelihood0, likelihood1, places=3)
-        for a,b in zip(means0, means1):   self.assertAlmostEqual(a,b)
-        for a,b in zip(covars0, covars1): self.assertAlmostEqual(a,b)
+        for a,b in zip(means0, means1):   self.assertAlmostEqual(a,b, places=3)
+        for a,b in zip(covars0, covars1): self.assertAlmostEqual(a,b, places=3)
 
     def test_prediction_full(self):
         print "test prediction full"
@@ -93,7 +89,7 @@ class SyntheticDataTests(unittest.TestCase):
         likelihood1 = gmm1.train(self.X)
         Y1 = gmm1.predict(self.X)
 
-        for a,b in zip(Y0, Y1): self.assertAlmostEqual(a,b)
+        for a,b in zip(Y0, Y1): self.assertAlmostEqual(a,b, places=3)
         self.assertTrue(len(set(Y0)) > 1)
 
     def test_getter_methods(self):
@@ -112,14 +108,14 @@ class SyntheticDataTests(unittest.TestCase):
         self.assertAlmostEqual(likelihood0, likelihood1, places=3)
 
         for (a, b) in zip(all_weights0, all_weights1):
-            self.assertAlmostEqual(a, b)
+            self.assertAlmostEqual(a, b, places=3)
 
         for m in range(gmm0.M):
             for a, b in zip(all_means0[m], all_means1[m]):
-                self.assertAlmostEqual(a, b)
+                self.assertAlmostEqual(a, b, places=3)
 
         for a, b in zip(all_diag_covars0, all_diag_covars1):
-            self.assertAlmostEqual(a, b)
+            self.assertAlmostEqual(a, b, places=3)
 
 
 if __name__ == '__main__':
