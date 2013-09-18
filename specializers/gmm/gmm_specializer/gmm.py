@@ -690,9 +690,9 @@ class GMM(object):
     
     def train_using_python(self, input_data, iters=10):
         from sklearn import mixture
-        self.clf = mixture.GMM(n_components=self.M, cvtype=self.cvtype)
-        self.clf.fit(input_data, n_iter=iters)
-        return self.clf.means, self.clf.covars
+        self.clf = mixture.GMM(n_components=self.M, covariance_type=self.cvtype)
+        self.clf.fit(input_data)
+        return self.clf.means_, self.clf.covars_
     
     def eval_using_python(self, obs_data):
         if self.clf is not None:
