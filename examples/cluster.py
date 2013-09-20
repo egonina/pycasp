@@ -694,10 +694,10 @@ if __name__ == '__main__':
     diarizer.new_gmm_list(num_comps, num_gmms, 'diag')
 
     # Cluster
-    #most_likely = diarizer.cluster(num_em_iters, kl_ntop, num_seg_iters_init, num_seg_iters, seg_length)
-    most_likely = diarizer.cluster_use_subset(num_em_iters, kl_ntop,\
-                                              num_seg_iters_init,\
-                                              num_seg_iters, seg_length)
+    most_likely = diarizer.cluster(num_em_iters, kl_ntop, num_seg_iters_init, num_seg_iters, seg_length)
+    #most_likely = diarizer.cluster_use_subset(num_em_iters, kl_ntop,\
+    #                                          num_seg_iters_init,\
+    #                                          num_seg_iters, seg_length)
     # Write out RTTM and GMM parameter files
     diarizer.write_to_RTTM(outfile, sp, meeting_name, most_likely, num_gmms, seg_length)
     diarizer.write_to_GMM(gmmfile)
