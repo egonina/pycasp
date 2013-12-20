@@ -311,7 +311,7 @@ class Diarizer(object):
                                                   np.array(range(d[0],d[1],1),\
                                                   dtype=np.int32)))
 
-            g.train_on_subset(self.X,cluster_indices, max_em_iters=em_iters)
+            g.train_on_subset(self.X, cluster_indices, max_em_iters=em_iters)
             
             iter_bic_list.append((g,cluster_indices))
             iter_bic_dict[p] = cluster_indices
@@ -455,7 +455,7 @@ class Diarizer(object):
 
             total_loops+=1
             for segment_iter in range(0,NUM_SEG_LOOPS):
-                iter_bic_dict, iter_bic_list, most_likely = self.segment_majority_vote(seg_length, em_iters)
+                iter_bic_dict, iter_bic_list, most_likely = self.segment_majority_vote_indices(seg_length, em_iters)
                             
             # Score all pairs of GMMs using BIC
             best_merged_gmm = None
@@ -475,17 +475,17 @@ class Diarizer(object):
                     g2 = self.gmm_list[gmm2idx]
 
                     if gmm1idx in iter_bic_dict and gmm2idx in iter_bic_dict:
-                        d1 = iter_bic_dict[gmm1idx]
-                        d2 = iter_bic_dict[gmm2idx]
-                        data = np.concatenate((d1,d2))
+                        i1 = iter_bic_dict[gmm1idx]
+                        i2 = iter_bic_dict[gmm2idx]
+                        indices = np.concatenate((i1,i2))
                     elif gmm1idx in iter_bic_dict:
-                        data = iter_bic_dict[gmm1idx]
+                        indices = iter_bic_dict[gmm1idx]
                     elif gmm2idx in iter_bic_dict:
-                        data = iter_bic_dict[gmm2idx]
+                        indices = iter_bic_dict[gmm2idx]
                     else:
                         continue
 
-                    new_gmm, score = compute_distance_BIC(g1, g2, data, em_iters)
+                    new_gmm, score = compute_distance_BIC_idx(g1, g2, self.X, indices)
                     
                     #print "Comparing BIC %d with %d: %f" % (gmm1idx, gmm2idx, score)
                     if score > best_BIC_score: 
@@ -501,11 +501,11 @@ class Diarizer(object):
                 for gmm1idx in range(l):
                     for gmm2idx in range(gmm1idx+1, l):
                         score = 0.0
-                        g1, d1 = iter_bic_list[gmm1idx]
-                        g2, d2 = iter_bic_list[gmm2idx] 
+                        g1, i1 = iter_bic_list[gmm1idx]
+                        g2, i2 = iter_bic_list[gmm2idx] 
 
-                        data = np.concatenate((d1,d2))
-                        new_gmm, score = compute_distance_BIC(g1, g2, data, em_iters)
+                        indices = np.concatenate((i1,i2))
+                        new_gmm, score = compute_distance_BIC_idx(g1, g2, self.X, indices)
 
                         #print "Comparing BIC %d with %d: %f" % (gmm1idx, gmm2idx, score)
                         if score > best_BIC_score: 
@@ -694,10 +694,10 @@ if __name__ == '__main__':
     diarizer.new_gmm_list(num_comps, num_gmms, 'diag')
 
     # Cluster
-    most_likely = diarizer.cluster(num_em_iters, kl_ntop, num_seg_iters_init, num_seg_iters, seg_length)
-    #most_likely = diarizer.cluster_use_subset(num_em_iters, kl_ntop,\
-    #                                          num_seg_iters_init,\
-    #                                          num_seg_iters, seg_length)
+    #most_likely = diarizer.cluster(num_em_iters, kl_ntop, num_seg_iters_init, num_seg_iters, seg_length)
+    most_likely = diarizer.cluster_use_subset(num_em_iters, kl_ntop,\
+                                              num_seg_iters_init,\
+                                              num_seg_iters, seg_length)
     # Write out RTTM and GMM parameter files
     diarizer.write_to_RTTM(outfile, sp, meeting_name, most_likely, num_gmms, seg_length)
     diarizer.write_to_GMM(gmmfile)

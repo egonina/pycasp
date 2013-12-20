@@ -1,10 +1,13 @@
-from svm_specializer.svm import *
 from gmm_specializer.gmm import *
+from svm_specializer.svm import *
+
+D = 2 
+M = 3
+N1 = 600
+N2 = 1200
+N3 = 1500
 
 # "Training"
-D = 2
-N1 = 600
-M = 3
 np.random.seed(0)
 C = np.array([[0., -0.7], [3.5, .7]])
 C1 = np.array([[-0.4, 1.7], [0.3, .7]])
@@ -15,9 +18,6 @@ Y1 = np.r_[
     ]
 X1 = Y1.astype(np.float32)
 
-D = 2
-N2 = 1200
-M = 3
 np.random.seed(0)
 C = np.array([[0.1, 7.2], [-3.6, 9.7]])
 C1 = np.array([[0.4, 5.7], [-0.3, 8.7]])
@@ -43,9 +43,6 @@ svm = SVM()
 svm.train(all_means, labels, "linear")
 
 # "Testing"
-D = 2
-N3 = 1500
-M = 3
 np.random.seed(0)
 C = np.array([[0.4, 9.7], [0.5, -4.1]])
 C1 = np.array([[0.14, 5.5], [3.3, 3.7]])

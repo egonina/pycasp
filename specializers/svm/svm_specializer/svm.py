@@ -101,9 +101,10 @@ class SVM(object):
         platform.set_cuda_device(cuda_device_id)
         platform_info['cuda'] = platform.get_cuda_info()
         num_cuda_threads = platform_info['cuda']['max_threads_per_block']
+        
         # hand-tuned calculation of shared memory limits given GPU shared memory size
         # and the SVM calculation. Tested on GTX285 and GTX480.
-        cuda_sh_mem_size = (platform_info['cuda']['max_shared_memory_per_block'] / 1024) * 90 
+        cuda_sh_mem_size = (platform_info['cuda']['max_shared_memory_per_block'] / 1024)  
     else:
         print "ERROR: You asked for a CUDA backend but no compiler was"\
                 "found or no cuda device are detected by the CUDA driver."

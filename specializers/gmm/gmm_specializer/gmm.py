@@ -880,7 +880,7 @@ def compute_distance_BIC_idx(gmm1, gmm2, data, index_list):
     c = np.ascontiguousarray(np.append(gmm1.components.covars, gmm2.components.covars))
     temp_GMM = GMM(nComps, gmm1.D, weights=w, means=m, covars=c, cvtype=gmm1.cvtype)
     
-    temp_GMM.train_on_subset_c(data, index_list)
+    temp_GMM.train_on_subset(data, index_list)
     
     score = temp_GMM.eval_data.likelihood - (gmm1.eval_data.likelihood + gmm2.eval_data.likelihood)
     
